@@ -1,20 +1,14 @@
-# Node version
-FROM node:16
+FROM node:14 as build
 
-# Working directory
-WORKDIR /usr/src/app
-
-# Copy all files except files that are mentioned .dockerignore
+COPY package*.json ./
+RUN npm install && npm cache clean --force
 COPY . .
-
-# Install the packages
-RUN npm install
-
-# Build the application
 RUN npm run build
 
-# Run the file
-CMD ["node", "dist/main.js"]
+FROM node:14-alpine AS release
 
-# Write the port
-EXPOSE 4000:4000
+COPY --from=build package*.json ./
+RUN npm install && npm cache clean --force
+COPY --from=build ./dist ./dist
+EXPOSE 4000
+ENTRYPOINT [ "node", "dist/main.js" ]
